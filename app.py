@@ -17,6 +17,7 @@ from tfln_components import (
     TFLNWaferType, ModulationFormat
 )
 from tfln_plots import generate_tfln_plots
+from gerber_viewer import generate_all_layers
 
 app = Flask(__name__)
 
@@ -385,6 +386,15 @@ def tfln_comparison():
             'energy_efficiency': round((silicon_power / 200) / (tfln_power / 400), 1)
         }
     })
+
+@app.route('/api/gerber/layers')
+def get_gerber_layers():
+    """Get all Gerber layer data for visualization"""
+    try:
+        gerber_data = generate_all_layers()
+        return jsonify(gerber_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("=" * 70)
