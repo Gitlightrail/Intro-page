@@ -1,0 +1,9 @@
+G04 TFLN Photonic Modulator - Bottom Copper Layer*
+G04 Date: 2026-01-30 09:28:49*
+%FSLAX36Y36*%
+%MOIN*%
+G04 Solid Ground Plane*
+%ADD20R,4.200X4.380*%
+D20*
+X2100000Y2190000D03*
+M02*
