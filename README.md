@@ -432,6 +432,16 @@ python3 pcie_interface.py
 
 # FPGA integration demo
 python3 fpga_integration.py
+
+### **Upload to GitHub (No Git Required)**
+
+If you do not have `git` installed, use the included uploader script:
+
+```bash
+python3 github_uploader.py
+```
+
+Follow the prompts to enter your GitHub Token and Repository Name.
 ```
 
 ### **Generate Technical Report**
