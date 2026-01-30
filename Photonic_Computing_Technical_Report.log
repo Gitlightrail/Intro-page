@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  30 JAN 2026 12:31
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  30 JAN 2026 12:41
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -355,8 +355,7 @@ ef
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count313
 \l__pdf_internal_box=\box56
-)
-No file Photonic_Computing_Technical_Report.aux.
+) (./Photonic_Computing_Technical_Report.aux)
 \openout1 = `Photonic_Computing_Technical_Report.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 20.
@@ -377,6 +376,7 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 20.
 LaTeX Font Info:    ... okay on input line 20.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 20.
 LaTeX Font Info:    ... okay on input line 20.
+
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -436,13 +436,16 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
 Package hyperref Info: Link coloring OFF on input line 20.
+ (./Photonic_Computing_Technical_Report.out)
+(./Photonic_Computing_Technical_Report.out)
 \@outlinefile=\write3
 \openout3 = `Photonic_Computing_Technical_Report.out'.
 
 \c@lstlisting=\count320
 LaTeX Font Info:    Trying to load font information for U+msa on input line 23.
 
- (/usr/local/texlive/2025basic/texmf-dist/tex/latex/amsfonts/umsa.fd
+
+(/usr/local/texlive/2025basic/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
 LaTeX Font Info:    Trying to load font information for U+msb on input line 23.
@@ -475,26 +478,15 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
-
-Package rerunfilecheck Warning: File `Photonic_Computing_Technical_Report.out' 
-has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `Photonic_Computing_Technical_Report
-.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  BD6F2A66388DEA816AED95AA3233DD0F;6921.
+Package rerunfilecheck Info: File `Photonic_Computing_Technical_Report.out' has
+ not changed.
+(rerunfilecheck)             Checksum: BD6F2A66388DEA816AED95AA3233DD0F;6921.
  ) 
 Here is how much of TeX's memory you used:
- 11851 strings out of 474662
- 179886 string characters out of 5751110
- 582291 words of memory out of 5000000
- 34646 multiletter control sequences out of 15000+600000
+ 11901 strings out of 474662
+ 180835 string characters out of 5751110
+ 582671 words of memory out of 5000000
+ 34690 multiletter control sequences out of 15000+600000
  570880 words of font info for 80 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
  75i,11n,79p,572b,575s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -515,11 +507,11 @@ xlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local
 /texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb></usr/l
 ocal/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pf
 b>
-Output written on Photonic_Computing_Technical_Report.pdf (9 pages, 204042 byte
+Output written on Photonic_Computing_Technical_Report.pdf (9 pages, 206811 byte
 s).
 PDF statistics:
- 254 PDF objects out of 1000 (max. 8388607)
- 211 compressed objects within 3 object streams
+ 379 PDF objects out of 1000 (max. 8388607)
+ 335 compressed objects within 4 object streams
  116 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 329 words of extra memory for PDF output out of 10000 (max. 10000000)
 
