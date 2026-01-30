@@ -12,6 +12,11 @@ from photonic_core import (
 )
 from pcie_interface import PhotonicPCIeBoard, MultiboardCluster
 from fpga_integration import HybridFPGAPhotonic, LargeScaleComputeCluster
+from tfln_components import (
+    TFLNMachZehnderModulator, TFLNRingModulator, TFLNPhotonicLink,
+    TFLNWaferType, ModulationFormat
+)
+from tfln_plots import generate_tfln_plots
 
 app = Flask(__name__)
 
@@ -21,6 +26,37 @@ wdm_system = WDMMultiplexer(num_channels=64)
 fft_processor = PhotonicFFT(size=1024)
 pcie_board = PhotonicPCIeBoard()
 hybrid_system = HybridFPGAPhotonic()
+
+# Initialize TFLN components
+tfln_modulator_400g = TFLNMachZehnderModulator(
+    interaction_length=15.0,
+    electrode_gap=6.0,
+    wafer_type=TFLNWaferType.X_CUT
+)
+
+tfln_modulator_800g = TFLNMachZehnderModulator(
+    interaction_length=18.0,
+    electrode_gap=5.5,
+    wafer_type=TFLNWaferType.X_CUT
+)
+
+tfln_ring = TFLNRingModulator(
+    radius=50.0,
+    coupling_gap=200.0,
+    wafer_type=TFLNWaferType.X_CUT
+)
+
+tfln_link_400g = TFLNPhotonicLink(
+    data_rate_gbps=400,
+    reach_km=2.0,
+    modulation=ModulationFormat.PAM4
+)
+
+tfln_link_800g = TFLNPhotonicLink(
+    data_rate_gbps=800,
+    reach_km=0.5,
+    modulation=ModulationFormat.PAM8
+)
 
 # Initialize board
 pcie_board.initialize()
@@ -178,6 +214,176 @@ def get_cluster_info():
         'total_memory_tb': perf['total_memory_tb'],
         'optical_fabric_pbps': perf['optical_fabric_pbps'],
         'network_topology': perf['network_topology']
+    })
+
+# TFLN Component Endpoints
+
+@app.route('/api/tfln/modulator_400g')
+def get_tfln_modulator_400g():
+    """Get 400G TFLN modulator specifications"""
+    v_pi = tfln_modulator_400g.half_wave_voltage()
+    bandwidth = tfln_modulator_400g.modulation_bandwidth()
+    power = tfln_modulator_400g.power_consumption(400, ModulationFormat.PAM4)
+    er = tfln_modulator_400g.extinction_ratio()
+    il = tfln_modulator_400g.insertion_loss()
+    
+    return jsonify({
+        'data_rate_gbps': 400,
+        'modulation': 'PAM4',
+        'v_pi_volts': round(v_pi, 3),
+        'bandwidth_ghz': round(bandwidth, 1),
+        'power_watts': round(power, 3),
+        'energy_per_bit_pj': round((power / 400) * 1000, 2),
+        'extinction_ratio_db': round(er, 1),
+        'insertion_loss_db': round(il, 2),
+        'interaction_length_mm': tfln_modulator_400g.interaction_length,
+        'electrode_gap_um': tfln_modulator_400g.electrode_gap,
+        'wafer_type': tfln_modulator_400g.wafer_type.value
+    })
+
+@app.route('/api/tfln/modulator_800g')
+def get_tfln_modulator_800g():
+    """Get 800G TFLN modulator specifications"""
+    v_pi = tfln_modulator_800g.half_wave_voltage()
+    bandwidth = tfln_modulator_800g.modulation_bandwidth()
+    power = tfln_modulator_800g.power_consumption(800, ModulationFormat.PAM8)
+    er = tfln_modulator_800g.extinction_ratio()
+    il = tfln_modulator_800g.insertion_loss()
+    
+    return jsonify({
+        'data_rate_gbps': 800,
+        'modulation': 'PAM8',
+        'v_pi_volts': round(v_pi, 3),
+        'bandwidth_ghz': round(bandwidth, 1),
+        'power_watts': round(power, 3),
+        'energy_per_bit_pj': round((power / 800) * 1000, 2),
+        'extinction_ratio_db': round(er, 1),
+        'insertion_loss_db': round(il, 2),
+        'interaction_length_mm': tfln_modulator_800g.interaction_length,
+        'electrode_gap_um': tfln_modulator_800g.electrode_gap,
+        'wafer_type': tfln_modulator_800g.wafer_type.value
+    })
+
+@app.route('/api/tfln/ring_modulator')
+def get_tfln_ring():
+    """Get TFLN ring modulator specifications"""
+    q_factor = tfln_ring.quality_factor()
+    fsr = tfln_ring.free_spectral_range()
+    tuning = tfln_ring.tuning_efficiency()
+    
+    return jsonify({
+        'radius_um': tfln_ring.radius,
+        'coupling_gap_nm': tfln_ring.coupling_gap,
+        'quality_factor': round(q_factor, 0),
+        'fsr_ghz': round(fsr, 2),
+        'tuning_efficiency_pm_per_v': round(tuning, 2),
+        'wafer_type': tfln_ring.wafer_type.value,
+        'wavelength_nm': tfln_ring.wavelength
+    })
+
+@app.route('/api/tfln/link_400g')
+def get_tfln_link_400g():
+    """Get 400G TFLN photonic link performance"""
+    metrics = tfln_link_400g.performance_metrics()
+    
+    return jsonify({
+        'data_rate_gbps': metrics['data_rate_gbps'],
+        'modulation': metrics['modulation'],
+        'v_pi_volts': round(metrics['v_pi_volts'], 3),
+        'bandwidth_ghz': round(metrics['bandwidth_ghz'], 1),
+        'power_watts': round(metrics['power_watts'], 3),
+        'energy_per_bit_pj': round(metrics['energy_per_bit_pj'], 2),
+        'extinction_ratio_db': round(metrics['extinction_ratio_db'], 1),
+        'link_budget': {
+            'tx_power_dbm': round(metrics['link_budget']['tx_power_dbm'], 2),
+            'fiber_loss_db': round(metrics['link_budget']['fiber_loss_db'], 2),
+            'rx_sensitivity_dbm': metrics['link_budget']['rx_sensitivity_dbm'],
+            'link_margin_db': round(metrics['link_budget']['link_margin_db'], 2),
+            'adequate': metrics['link_budget']['adequate']
+        }
+    })
+
+@app.route('/api/tfln/link_800g')
+def get_tfln_link_800g():
+    """Get 800G TFLN photonic link performance"""
+    metrics = tfln_link_800g.performance_metrics()
+    
+    return jsonify({
+        'data_rate_gbps': metrics['data_rate_gbps'],
+        'modulation': metrics['modulation'],
+        'v_pi_volts': round(metrics['v_pi_volts'], 3),
+        'bandwidth_ghz': round(metrics['bandwidth_ghz'], 1),
+        'power_watts': round(metrics['power_watts'], 3),
+        'energy_per_bit_pj': round(metrics['energy_per_bit_pj'], 2),
+        'extinction_ratio_db': round(metrics['extinction_ratio_db'], 1),
+        'link_budget': {
+            'tx_power_dbm': round(metrics['link_budget']['tx_power_dbm'], 2),
+            'fiber_loss_db': round(metrics['link_budget']['fiber_loss_db'], 2),
+            'rx_sensitivity_dbm': metrics['link_budget']['rx_sensitivity_dbm'],
+            'link_margin_db': round(metrics['link_budget']['link_margin_db'], 2),
+            'adequate': metrics['link_budget']['adequate']
+        }
+    })
+
+@app.route('/api/tfln/pam4_encode', methods=['POST'])
+def tfln_pam4_encode():
+    """Encode bits to PAM4 using TFLN modulator"""
+    data = request.json
+    bits = np.array(data.get('bits', [0, 1, 0, 0, 1, 1, 1, 0]))
+    
+    # Encode to PAM4 voltages
+    voltages = tfln_modulator_400g.encode_pam4(bits)
+    
+    # Get optical output
+    optical_output = tfln_modulator_400g.transfer_function(voltages)
+    
+    return jsonify({
+        'input_bits': bits.tolist(),
+        'pam4_voltages': voltages.tolist(),
+        'optical_output': optical_output.tolist(),
+        'v_pi': round(tfln_modulator_400g.half_wave_voltage(), 3),
+        'num_symbols': len(voltages)
+    })
+
+@app.route('/api/tfln/plots')
+def get_tfln_plots():
+    """Generate and return all TFLN characterization plots"""
+    plots = generate_tfln_plots()
+    return jsonify(plots)
+
+@app.route('/api/tfln/comparison')
+def tfln_comparison():
+    """Compare TFLN with silicon photonics"""
+    
+    # TFLN 400G
+    tfln_v_pi = tfln_modulator_400g.half_wave_voltage()
+    tfln_power = tfln_modulator_400g.power_consumption(400, ModulationFormat.PAM4)
+    tfln_bw = tfln_modulator_400g.modulation_bandwidth()
+    
+    # Silicon (typical values)
+    silicon_v_pi = 6.2
+    silicon_power = 5.2
+    silicon_bw = 55
+    
+    return jsonify({
+        'tfln': {
+            'v_pi_volts': round(tfln_v_pi, 2),
+            'power_watts': round(tfln_power, 2),
+            'bandwidth_ghz': round(tfln_bw, 1),
+            'energy_per_bit_pj': round((tfln_power / 400) * 1000, 2)
+        },
+        'silicon': {
+            'v_pi_volts': silicon_v_pi,
+            'power_watts': silicon_power,
+            'bandwidth_ghz': silicon_bw,
+            'energy_per_bit_pj': round((silicon_power / 200) * 1000, 2)
+        },
+        'improvement': {
+            'v_pi_reduction': round(silicon_v_pi / tfln_v_pi, 1),
+            'power_reduction': round(silicon_power / tfln_power, 1),
+            'bandwidth_increase': round(tfln_bw / silicon_bw, 1),
+            'energy_efficiency': round((silicon_power / 200) / (tfln_power / 400), 1)
+        }
     })
 
 if __name__ == '__main__':
