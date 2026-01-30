@@ -576,6 +576,80 @@
                     </div>
                 </div>
             </div>
+
+            <!-- TFLN Gerber Viewer Section -->
+            <div class="card full-width"
+                style="background: linear-gradient(135deg, rgba(255, 136, 0, 0.1), rgba(255, 0, 110, 0.05));">
+                <div class="card-title" style="font-size: 2em; text-align: center; margin-bottom: 20px;">
+                    🔧 TFLN PCB Design Viewer
+                </div>
+                <p style="text-align: center; color: #8b9dc3; margin-bottom: 30px; font-size: 1.1em;">
+                    8-Layer Rogers RO4350B • 106.68 x 111.15 mm • 50Ω Impedance Control
+                </p>
+
+                <!-- Board Specifications -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px;">
+                    <div class="metric">
+                        <span class="metric-label">Board Size</span>
+                        <span class="metric-value" id="gerber-board-size">-- mm</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Layer Count</span>
+                        <span class="metric-value" id="gerber-layer-count">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Material</span>
+                        <span class="metric-value" id="gerber-material">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Impedance</span>
+                        <span class="metric-value" id="gerber-impedance">--</span>
+                    </div>
+                </div>
+
+                <button class="button" onclick="loadGerberFiles()"
+                    style="margin: 20px auto; display: block; font-size: 1.1em; padding: 15px 40px;">
+                    Load Gerber Files
+                </button>
+
+                <!-- Gerber Viewer -->
+                <div id="gerber-viewer-container" style="display: none; margin-top: 30px;">
+                    <h2 style="text-align: center; color: #ff8800; margin-bottom: 30px;">PCB Layer Visualization</h2>
+
+                    <!-- Layer Controls -->
+                    <div
+                        style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px;">
+                        <button class="button layer-btn" data-layer="top"
+                            style="background: linear-gradient(135deg, #CC0000, #990000);">L1 - Top Signal</button>
+                        <button class="button layer-btn" data-layer="l2"
+                            style="background: linear-gradient(135deg, #0000CC, #000099);">L2 - Signal</button>
+                        <button class="button layer-btn" data-layer="l3"
+                            style="background: linear-gradient(135deg, #CC6600, #994400);">L3 - Power</button>
+                        <button class="button layer-btn" data-layer="bottom"
+                            style="background: linear-gradient(135deg, #006600, #004400);">L8 - Bottom</button>
+                        <button class="button layer-btn" data-layer="silk"
+                            style="background: linear-gradient(135deg, #FFFFFF, #CCCCCC); color: #000;">Silkscreen</button>
+                        <button class="button layer-btn" data-layer="outline"
+                            style="background: linear-gradient(135deg, #FFFF00, #CCCC00); color: #000;">Outline</button>
+                        <button class="button layer-btn" data-layer="drill"
+                            style="background: linear-gradient(135deg, #888888, #555555);">Drill Holes</button>
+                        <button class="button" onclick="showAllLayers()"
+                            style="background: linear-gradient(135deg, #00ff88, #00cc66);">Show All</button>
+                    </div>
+
+                    <!-- Canvas Container -->
+                    <div class="card" style="padding: 40px; background: #1a1f3a;">
+                        <canvas id="gerber-canvas" width="1200" height="1260" style="width: 100%; max-width: 1200px; height: auto; display: block; margin: 0 auto; 
+                            background: #0a0e27; border: 2px solid #00d4ff; border-radius: 10px;">
+                        </canvas>
+
+                        <!-- Layer Legend -->
+                        <div id="layer-legend"
+                            style="margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr);">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -767,6 +841,163 @@
 
             // Scroll to TFLN section
             document.getElementById('tfln-plots-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Gerber Viewer Functions
+        let gerberData = null;
+        let visibleLayers = new Set();
+
+        async function loadGerberFiles() {
+            const response = await fetch('/api/gerber/layers');
+            gerberData = await response.json();
+
+            // Update board specs
+            document.getElementById('gerber-board-size').textContent =
+                `${gerberData.board_specs.width} x ${gerberData.board_specs.height} mm`;
+            document.getElementById('gerber-layer-count').textContent = gerberData.board_specs.layer_count;
+            document.getElementById('gerber-material').textContent = gerberData.board_specs.material;
+            document.getElementById('gerber-impedance').textContent = gerberData.board_specs.impedance;
+
+            // Show viewer
+            document.getElementById('gerber-viewer-container').style.display = 'block';
+
+            // Initialize with all layers visible
+            showAllLayers();
+
+            // Add click handlers to layer buttons
+            document.querySelectorAll('.layer-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const layer = btn.dataset.layer;
+                    toggleLayer(layer);
+                });
+            });
+
+            // Scroll to viewer
+            document.getElementById('gerber-viewer-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function toggleLayer(layerName) {
+            if (visibleLayers.has(layerName)) {
+                visibleLayers.delete(layerName);
+            } else {
+                visibleLayers.add(layerName);
+            }
+            renderGerber();
+        }
+
+        function showAllLayers() {
+            visibleLayers = new Set(['top', 'l2', 'l3', 'bottom', 'silk', 'outline', 'drill']);
+            renderGerber();
+        }
+
+        function renderGerber() {
+            if (!gerberData) return;
+
+            const canvas = document.getElementById('gerber-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.fillStyle = '#0a0e27';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate scale to fit board on canvas with padding
+            const padding = 100;
+            const scaleX = (canvas.width - 2 * padding) / gerberData.board_specs.width;
+            const scaleY = (canvas.height - 2 * padding) / gerberData.board_specs.height;
+            const scale = Math.min(scaleX, scaleY);
+
+            // Center the board
+            const offsetX = (canvas.width - gerberData.board_specs.width * scale) / 2;
+            const offsetY = (canvas.height - gerberData.board_specs.height * scale) / 2;
+
+            // Render each visible layer
+            const layerOrder = ['bottom', 'l3', 'l2', 'top', 'outline', 'drill', 'silk'];
+
+            layerOrder.forEach(layerName => {
+                if (!visibleLayers.has(layerName)) return;
+
+                const layer = gerberData.layers[layerName];
+                const layerInfo = gerberData.layer_info[layerName];
+
+                if (!layer || !layerInfo) return;
+
+                ctx.strokeStyle = layerInfo.color;
+                ctx.fillStyle = layerInfo.color;
+                ctx.globalAlpha = 0.7;
+
+                // Draw lines
+                if (layer.lines) {
+                    layer.lines.forEach(line => {
+                        ctx.lineWidth = line.width * scale;
+                        ctx.beginPath();
+                        ctx.moveTo(offsetX + line.x1 * scale, offsetY + line.y1 * scale);
+                        ctx.lineTo(offsetX + line.x2 * scale, offsetY + line.y2 * scale);
+                        ctx.stroke();
+                    });
+                }
+
+                // Draw pads
+                if (layer.pads) {
+                    layer.pads.forEach(pad => {
+                        const x = offsetX + pad.x * scale;
+                        const y = offsetY + pad.y * scale;
+
+                        if (pad.shape === 'circle') {
+                            ctx.beginPath();
+                            ctx.arc(x, y, (pad.size[0] / 2) * scale, 0, 2 * Math.PI);
+                            ctx.fill();
+                        } else if (pad.shape === 'rectangle') {
+                            const w = pad.size[0] * scale;
+                            const h = pad.size[1] * scale;
+                            ctx.fillRect(x - w / 2, y - h / 2, w, h);
+                        }
+                    });
+                }
+
+                // Draw drill holes
+                if (layer.holes) {
+                    layer.holes.forEach(hole => {
+                        const x = offsetX + hole.x * scale;
+                        const y = offsetY + hole.y * scale;
+                        ctx.fillStyle = '#000000';
+                        ctx.globalAlpha = 1.0;
+                        ctx.beginPath();
+                        ctx.arc(x, y, (hole.diameter / 2) * scale, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.strokeStyle = '#888888';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    });
+                }
+            });
+
+            ctx.globalAlpha = 1.0;
+
+            // Update legend
+            updateLegend();
+        }
+
+        function updateLegend() {
+            const legend = document.getElementById('layer-legend');
+            legend.innerHTML = '';
+
+            visibleLayers.forEach(layerName => {
+                const layerInfo = gerberData.layer_info[layerName];
+                if (!layerInfo) return;
+
+                const item = document.createElement('div');
+                item.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px;';
+
+                const colorBox = document.createElement('div');
+                colorBox.style.cssText = `width: 30px; height: 30px; background: ${layerInfo.color}; border-radius: 5px; border: 1px solid #00d4ff;`;
+
+                const text = document.createElement('div');
+                text.innerHTML = `\u003cstrong style="color: #00d4ff;">${layerInfo.name}\u003c/strong>\u003cbr>\u003cspan style="color: #8b9dc3; font-size: 0.9em;">${layerInfo.description}\u003c/span>`;
+
+                item.appendChild(colorBox);
+                item.appendChild(text);
+                legend.appendChild(item);
+            });
         }
 
         // Initialize on load
